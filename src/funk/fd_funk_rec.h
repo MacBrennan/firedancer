@@ -293,6 +293,13 @@ FD_FN_PURE fd_funk_rec_t *
 fd_funk_rec_modify( fd_funk_t *           funk,
                     fd_funk_rec_t const * rec );
 
+/* Returns true if the record has been modified in its transaction
+   compared to the prior incarnation of the record with the same key. */
+
+FD_FN_PURE int
+fd_funk_rec_is_modified( fd_funk_t *           funk,
+                         fd_funk_rec_t const * rec );
+
 /* TODO: Consider instead doing something like: modify_init, modify_fini and
    preventing forking the txn if records are being modified instead of
    the long laundry list of lifetime constraints? */
@@ -436,9 +443,35 @@ fd_funk_rec_remove( fd_funk_t *     funk,
                     fd_funk_rec_t * rec,
                     int             erase );
 
+/* fd_funk_rec_persist causes the current state of the record to be
+   written to the backing file, if one has been opened with
+   fd_funk_persist_open. This function only makes sense on records
+   that are part of the root or last published
+   transaction. Persistence is automatic for all records in a
+   transaction when transactions are published, which is the usual
+   case. Therefore, fd_funk_rec_persist does nothing if there is no
+   open backing file or the record is unpublished.
+
+   An error code is returned on failure. */
+
+int
+fd_funk_rec_persist( fd_funk_t *     funk,
+                     fd_funk_rec_t * rec );
+
+/* fd_funk_rec_persist_erase causes the current state of the record to
+   be deleted from the backing file. fd_funk_rec_persist_erase does
+   nothing if there is no open backing file, the record is
+   unpublished, or the record's state was never written to the file.
+
+   An error code is returned on failure. */
+
+int
+fd_funk_rec_persist_erase( fd_funk_t *     funk,
+                           fd_funk_rec_t * rec );
+
 /* fd_funk_rec_write_prepare combines several operations into one
    convenient package. There are 3 basic cases:
-   
+
    1. If the given record key already exists in the transaction, the
    record is returned in modifiable form. This is equivalent to
    fd_funk_rec_query combined with fd_funk_rec_modify.
@@ -460,6 +493,8 @@ fd_funk_rec_write_prepare( fd_funk_t *               funk,
                            fd_funk_txn_t *           txn,
                            fd_funk_rec_key_t const * key,
                            ulong                     min_val_size,
+                           int                       do_create,
+                           fd_funk_rec_t const *     irec,
                            int *                     opt_err );
 
 /* Misc */

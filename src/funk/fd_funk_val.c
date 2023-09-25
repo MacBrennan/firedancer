@@ -261,6 +261,58 @@ fd_funk_val_truncate( fd_funk_rec_t * rec,
 }
 
 int
+fd_funk_val_uncache( fd_funk_t *           funk,
+                     fd_funk_rec_t const * rec ) {
+
+  if( FD_UNLIKELY( !funk ) ) return FD_FUNK_ERR_INVAL;
+
+  fd_wksp_t * wksp = fd_funk_wksp( funk );
+
+  fd_funk_rec_t * rec_map = fd_funk_rec_map( funk, wksp );
+
+  ulong rec_max = funk->rec_max;
+
+  ulong rec_idx = (ulong)(rec - rec_map);
+
+  if( FD_UNLIKELY( (rec_idx>=rec_max) /* Out of map (incl NULL) */ | (rec!=(rec_map+rec_idx)) /* Bad alignment */ ) )
+    return FD_FUNK_ERR_INVAL;
+
+  if ( rec->val_gaddr == 0UL )
+    return FD_FUNK_SUCCESS; /* Already uncached */
+
+  fd_alloc_free( fd_funk_alloc( funk, wksp ), fd_wksp_laddr_fast( wksp, rec->val_gaddr ) );
+  ((fd_funk_rec_t *) rec)->val_max   = 0U;
+  ((fd_funk_rec_t *) rec)->val_gaddr = 0UL;
+
+  /* Note that rec->val_sz remains correct */
+
+  return FD_FUNK_SUCCESS;
+}
+
+
+void *
+fd_funk_val_cache( fd_funk_t *           funk,
+                   fd_funk_rec_t const * rec,
+                   int *                 opt_err ) {
+  fd_wksp_t * wksp = fd_funk_wksp( funk );
+  ulong val_gaddr = rec->val_gaddr;
+  if ( FD_LIKELY( val_gaddr ) )
+    return fd_wksp_laddr_fast( wksp, val_gaddr );
+
+  ulong   new_val_max;
+  uchar * new_val = (uchar *)fd_alloc_malloc_at_least( fd_funk_alloc( funk, wksp ), 1UL,
+                                                       fd_ulong_max( rec->val_sz, 1UL ), &new_val_max );
+  if( FD_UNLIKELY( !new_val || new_val_max < rec->val_sz ) ) {
+    fd_int_store_if( !!opt_err, opt_err, FD_FUNK_ERR_MEM );
+    return NULL;
+  }
+
+  ((fd_funk_rec_t *) rec)->val_max   = (uint)new_val_max;
+  ((fd_funk_rec_t *) rec)->val_gaddr = fd_wksp_gaddr_fast( wksp, new_val );
+  return new_val;
+}
+
+int
 fd_funk_val_verify( fd_funk_t * funk ) {
   fd_wksp_t *     wksp     = fd_funk_wksp( funk );          /* Previously verified */
   fd_funk_rec_t * rec_map  = fd_funk_rec_map( funk, wksp ); /* Previously verified */
