@@ -217,12 +217,7 @@ fd_funk_rec_is_modified( fd_funk_t *           funk,
     FD_LOG_CRIT(( "memory corruption detected (bad idx)" ));
   fd_funk_txn_t * txn = txn_map + txn_idx;
 
-  int err;
-  void * val = fd_funk_val_cache( funk, rec, &err );
-  if ( NULL == val ) {
-    FD_LOG_WARNING(("failed to load record: error %d", err));
-    return 1;
-  }
+  void * val = fd_funk_val( rec, wksp );
 
   do {
     /* Go to the parent transaction */
@@ -240,11 +235,7 @@ fd_funk_rec_is_modified( fd_funk_t *           funk,
     if ( rec2 ) {
       if ( rec->val_sz != rec2->val_sz )
         return 1;
-      void * val2 = fd_funk_val_cache( funk, rec2, &err );
-      if ( NULL == val2 ) {
-        FD_LOG_WARNING(("failed to load record: error %d", err));
-        return 1;
-      }
+      void * val2 = fd_funk_val( rec2, wksp );
       return memcmp(val, val2, rec->val_sz) != 0;
     }
   } while (txn);
