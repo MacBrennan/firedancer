@@ -171,6 +171,9 @@ fd_funk_join( void * shfunk ) {
     return NULL;
   }
 
+  funk->notify_cb = NULL;
+  funk->notify_cb_arg = NULL;
+
   return funk;
 }
 
@@ -338,4 +341,3 @@ fd_funk_verify( fd_funk_t * funk ) {
 
   return FD_FUNK_SUCCESS;
 }
-

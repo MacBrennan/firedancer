@@ -9,11 +9,11 @@
    short for "transaction id" and xids have a compile time fixed size
    (e.g. 32-bytes).  keys also have a compile time fixed size (e.g.
    64-bytes).  Record values can vary in length from zero to a compile
-   time maximum size (e.g. 10 MiB) inclusive.  The xid of all zeros is
-   reserved for the "root" transaction described below.  Outside this,
-   there are no restrictions on what a record xid, key or val can be.
-   Individual records can be created, updated, and deleted arbitrarily.
-   They are just binary data as far as funk is concerned.
+   time maximum size.  The xid of all zeros is reserved for the "root"
+   transaction described below.  Outside this, there are no
+   restrictions on what a record xid, key or val can be.  Individual
+   records can be created, updated, and deleted arbitrarily.  They are
+   just binary data as far as funk is concerned.
 
    The maximum number of records is practically only limited by the size
    of the workspace memory backing it.  At present, each record requires
@@ -157,6 +157,10 @@
 
 #define FD_FUNK_MAGIC (0xf17eda2ce7fc2c00UL) /* firedancer funk version 0 */
 
+typedef void (*fd_funk_notify_cb_t)( fd_funk_rec_t const * updated,
+                                     fd_funk_rec_t const * removed,
+                                     void *                arg );
+
 struct __attribute__((aligned(FD_FUNK_ALIGN))) fd_funk_private {
 
   /* Metadata */
@@ -252,6 +256,11 @@ struct __attribute__((aligned(FD_FUNK_ALIGN))) fd_funk_private {
      that and allocating exclusively from that? */
 
   ulong alloc_gaddr; /* Non-zero wksp gaddr with tag wksp tag */
+
+  /* Callback used to notify application that a new record was
+     created/updated/removed. */
+  fd_funk_notify_cb_t notify_cb;
+  void * notify_cb_arg;
 
   /* Padding to FD_FUNK_ALIGN here */
 };
@@ -416,6 +425,16 @@ fd_funk_rec_map( fd_funk_t * funk,       /* Assumes current local join */
   return (fd_funk_rec_t *)fd_wksp_laddr_fast( wksp, funk->rec_map_gaddr );
 }
 
+/* fd_funk_rec_size returns current number of records that are held
+   in the funk.  This includes both records of the last published
+   transaction and records for transactions that are in-flight. */
+FD_FN_PURE static inline ulong
+fd_funk_rec_size( fd_funk_t * funk,       /* Assumes current local join */
+                  fd_wksp_t * wksp ) {    /* Assumes wksp == fd_funk_wksp( funk ) */
+  fd_funk_rec_t * map = (fd_funk_rec_t *)fd_wksp_laddr_fast( wksp, funk->rec_map_gaddr );
+  return fd_funk_rec_map_key_cnt( map );
+}
+
 /* fd_funk_last_publish_rec_{head,tail} returns a pointer in the
    caller's address space to {oldest,young} record (by creation) of all
    records in the last published transaction, NULL if the last published
@@ -467,6 +486,15 @@ fd_funk_last_publish_descendant( fd_funk_t *     funk,
   if( fd_funk_txn_idx_is_null( child_idx ) ) return NULL;
   return fd_funk_txn_descendant( txn_map + child_idx, txn_map );
 }
+
+/* Set the new record callback notification function. This is called
+   whenever a new record is created/updated/removed, allowing the
+   application to track the latest version. fd_funk_set_notify calls
+   the function immediately on all existing records. */
+void
+fd_funk_set_notify( fd_funk_t *         funk,
+                    fd_funk_notify_cb_t notify_cb,
+                    void *              notify_cb_arg);
 
 /* Misc */
 
