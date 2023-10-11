@@ -1,7 +1,7 @@
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 .SUFFIXES:
-.PHONY: all info bin rust include lib unit-test fuzz-test run-unit-test help clean distclean asm ppp show-deps
+.PHONY: all info bin rust include lib unit-test fuzz-test run-unit-test run-script-test help clean distclean asm ppp show-deps
 .SECONDARY:
 .SECONDEXPANSION:
 
@@ -22,6 +22,7 @@ help:
 	# EXTRAS          = $(EXTRAS)
 	# SHELL           = $(SHELL)
 	# BASEDIR         = $(BASEDIR)
+	# BUILDDIR        = $(BUILDDIR)
 	# OBJDIR          = $(OBJDIR)
 	# CPPFLAGS        = $(CPPFLAGS)
 	# CC              = $(CC)
@@ -378,3 +379,6 @@ asm: $(DEPFILES:.d=.S)
 ppp: $(DEPFILES:.d=.i)
 
 endif
+
+run-script-test:
+	OBJDIR=$(OBJDIR) MACHINE=$(MACHINE) scripts/script-tests.sh
