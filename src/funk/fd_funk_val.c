@@ -306,3 +306,4 @@ fd_funk_val_verify( fd_funk_t * funk ) {
 
   return FD_FUNK_SUCCESS;
 }
+
