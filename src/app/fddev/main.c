@@ -85,14 +85,12 @@ main( int     argc,
   if( FD_UNLIKELY( argc >= MAX_ARGC ) ) FD_LOG_ERR(( "too many arguments (%i)", argc ));
   char ** argv = _argv;
 
-  /* initialize logging */
-  fd_boot( &argc, &argv );
-  fd_log_thread_set( "main" );
-
   argc--; argv++;
 
+  config_t config = fdctl_boot( &argc, &argv );
+  fd_log_thread_set( "main" );
+
   /* load configuration and command line parsing */
-  config_t config = config_parse( &argc, &argv );
   if( config.is_live_cluster )
     FD_LOG_ERR(( "fddev is for development and test environments but your configuration "
                  "targets a live cluster. use fdctl if this is a production environment" ));

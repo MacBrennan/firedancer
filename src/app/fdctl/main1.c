@@ -1,27 +1,78 @@
+#define _GNU_SOURCE
+#define FD_UNALIGNED_ACCESS_STYLE 0
+#include "../../util/bits/fd_bits.h"
+
 #include "fdctl.h"
 
+#include <fcntl.h>
+#include <sys/mman.h>
+
 action_t ACTIONS[ ACTIONS_CNT ] = {
-  { .name = "run",       .args = NULL,               .fn = run_cmd_fn,       .perm = run_cmd_perm },
-  { .name = "configure", .args = configure_cmd_args, .fn = configure_cmd_fn, .perm = configure_cmd_perm },
-  { .name = "monitor",   .args = monitor_cmd_args,   .fn = monitor_cmd_fn,   .perm = monitor_cmd_perm },
-  { .name = "keygen",    .args = NULL,               .fn = keygen_cmd_fn,    .perm = NULL },
-  { .name = "ready",     .args = NULL,               .fn = ready_cmd_fn,     .perm = NULL },
-  { .name = "info",      .args = NULL,               .fn = info_cmd_fn,      .perm = NULL },
-  { .name = "mem",       .args = NULL,               .fn = info_cmd_fn,      .perm = NULL },
-  { .name = "topo",      .args = NULL,               .fn = info_cmd_fn,      .perm = NULL },
+  { .name = "run",        .args = NULL,               .fn = run_cmd_fn,        .perm = run_cmd_perm },
+  { .name = "run1",       .args = run1_cmd_args,      .fn = run1_cmd_fn,       .perm = NULL },
+  { .name = "run-solana", .args = NULL,               .fn = run_solana_cmd_fn, .perm = NULL },
+  { .name = "configure",  .args = configure_cmd_args, .fn = configure_cmd_fn,  .perm = configure_cmd_perm },
+  { .name = "monitor",    .args = monitor_cmd_args,   .fn = monitor_cmd_fn,    .perm = monitor_cmd_perm },
+  { .name = "keygen",     .args = NULL,               .fn = keygen_cmd_fn,     .perm = NULL },
+  { .name = "ready",      .args = NULL,               .fn = ready_cmd_fn,      .perm = NULL },
+  { .name = "info",       .args = NULL,               .fn = info_cmd_fn,       .perm = NULL },
+  { .name = "mem",        .args = NULL,               .fn = info_cmd_fn,       .perm = NULL },
+  { .name = "topo",       .args = NULL,               .fn = info_cmd_fn,       .perm = NULL },
 };
+
+extern int * fd_log_private_shared_lock;
+
+static void
+main_boot_memfd( int        boot_memfd,
+                 config_t * config ) {
+  uchar * bytes = mmap( NULL, sizeof( config_t ), PROT_READ, MAP_PRIVATE, boot_memfd, 0 );
+  if( FD_UNLIKELY( bytes == MAP_FAILED ) ) {
+    fd_log_private_fprintf_0( STDERR_FILENO, "mmap() failed (%i-%s)", errno, fd_io_strerror( errno ) );
+    exit_group( 1 );
+  }
+  fd_memcpy( config, bytes, sizeof( config_t ) );
+  if( FD_UNLIKELY( munmap( bytes, sizeof( config_t ) ) ) ) {
+    fd_log_private_fprintf_0( STDERR_FILENO, "munmap() failed (%i-%s)", errno, fd_io_strerror( errno ) );
+    exit_group( 1 );
+  }
+  if( FD_UNLIKELY( close( boot_memfd ) ) ) {
+    fd_log_private_fprintf_0( STDERR_FILENO, "close() failed (%i-%s)", errno, fd_io_strerror( errno ) );
+    exit_group( 1 );
+  }
+}
+
+config_t fdctl_boot( int *    pargc,
+                     char *** pargv ) {
+  int boot_memfd = fd_env_strip_cmdline_int( pargc, pargv, "--boot-memfd", NULL, -1 );
+  if( FD_UNLIKELY( boot_memfd >= 0 ) ) {
+    config_t config;
+    main_boot_memfd( boot_memfd, &config );
+
+    /* Parent must have already opened the log file. No main command
+        line args are provided in memfd case.  For now the file descriptors
+        are assumed constant. */
+    int boot_argc = 4;
+    char * _boot_argv[ 5 ] = { "--log-lock-memfd", "3", "--log-fd", "4", NULL };
+    char ** boot_argv = _boot_argv;
+    fd_boot( &boot_argc, &boot_argv );
+
+    return config;
+  } else {
+    fd_boot( pargc, pargv );
+
+    /* load configuration and command line parsing */
+    return config_parse( pargc, pargv );
+  }
+}
 
 int
 main1( int     argc,
-      char ** _argv ) {
-  fd_boot( &argc, &_argv );
-  fd_log_thread_set( "main" );
-
+       char ** _argv ) {
   char ** argv = _argv;
   argc--; argv++;
 
-  /* load configuration and command line parsing */
-  config_t config = config_parse( &argc, &argv );
+  config_t config = fdctl_boot( &argc, &argv );
+  fd_log_thread_set( "main" );
 
   if( FD_UNLIKELY( !argc ) ) FD_LOG_ERR(( "no subcommand specified" ));
 

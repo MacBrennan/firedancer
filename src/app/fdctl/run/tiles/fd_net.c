@@ -348,7 +348,7 @@ populate_allowed_fds( void * scratch,
 
   if( FD_UNLIKELY( out_fds_cnt < 4 ) ) FD_LOG_ERR(( "out_fds_cnt %lu", out_fds_cnt ));
   out_fds[ 0 ] = 2; /* stderr */
-  out_fds[ 1 ] = 3; /* logfile */
+  out_fds[ 1 ] = 4; /* logfile */
   out_fds[ 2 ] = init_ctx->xsk->xsk_fd;
   out_fds[ 3 ] = init_ctx->lo_xsk ? init_ctx->lo_xsk->xsk_fd : -1;
   return init_ctx->lo_xsk ? 4 : 3;

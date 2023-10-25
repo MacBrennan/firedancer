@@ -52,11 +52,11 @@ static void populate_sock_filter_policy_quic( ulong out_cnt, struct sock_filter 
 //  lbl_1:
     /* load syscall argument 0 in accumulator */
     BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof(struct seccomp_data, args[0])),
-    BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, 3, /* RET_ALLOW */ 19, /* RET_KILL_PROCESS */ 18 ),
+    BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, 4, /* RET_ALLOW */ 19, /* RET_KILL_PROCESS */ 18 ),
 //  check_fsync:
     /* load syscall argument 0 in accumulator */
     BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof(struct seccomp_data, args[0])),
-    BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, 3, /* RET_ALLOW */ 17, /* RET_KILL_PROCESS */ 16 ),
+    BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, 4, /* RET_ALLOW */ 17, /* RET_KILL_PROCESS */ 16 ),
 //  check_sendto:
     /* load syscall argument 0 in accumulator */
     BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof(struct seccomp_data, args[0])),

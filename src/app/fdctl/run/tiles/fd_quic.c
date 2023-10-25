@@ -915,7 +915,7 @@ populate_allowed_fds( void * scratch,
 
   if( FD_UNLIKELY( out_fds_cnt < 3 ) ) FD_LOG_ERR(( "out_fds_cnt %lu", out_fds_cnt ));
   out_fds[ 0 ] = 2;                                /* stderr */
-  out_fds[ 1 ] = 3;                                /* logfile */
+  out_fds[ 1 ] = 4;                                /* logfile */
   out_fds[ 2 ] = fd_ip_netlink_get( ctx->ip )->fd; /* netlink socket */
   return 3;
 }

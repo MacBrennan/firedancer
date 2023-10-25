@@ -12,15 +12,15 @@ unsigned int xsk_fd, unsigned int lo_xsk_fd
 # are always written to the log file.
 #
 # arg 0 is the file descriptor to write to.  The boot process ensures
-# that descriptor 2 is always STDERR and descriptor 3 is the logfile.
+# that descriptor 2 is always STDERR and descriptor 4 is the logfile.
 write: (or (eq (arg 0) 2)
-           (eq (arg 0) 3))
+           (eq (arg 0) 4))
 
 # logging: 'WARNING' and above fsync the logfile to disk immediately
 #
 # arg 0 is the file descriptor to fsync.  The boot process ensures that
-# descriptor 3 is always the logfile.
-fsync: (eq (arg 0) 3)
+# descriptor 4 is always the logfile.
+fsync: (eq (arg 0) 4)
 
 # XDP: we need to call sendto to notify the kernel there are new entries
 #      in the TX ring
