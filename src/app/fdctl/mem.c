@@ -1,7 +1,7 @@
 #include "fdctl.h"
 
 void
-info_cmd_fn( args_t *         args,
+mem_cmd_fn( args_t *          args,
              config_t * const config ) {
   (void)args;
 

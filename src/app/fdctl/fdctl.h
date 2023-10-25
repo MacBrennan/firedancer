@@ -38,6 +38,10 @@ typedef union {
   } dev1;
 
   struct {
+    ulong key;
+  } keygen;
+
+  struct {
     const char * payload_base64;
     ulong  count;
     const char * dst_ip;
@@ -52,10 +56,19 @@ typedef struct {
     void       (*args)( int * pargc, char *** pargv, args_t * args );
     void       (*perm)( args_t * args, fd_caps_ctx_t * caps, config_t * const config );
     void       (*fn  )( args_t * args, config_t * const config );
+    const char * desc;
 } action_t;
 
-#define ACTIONS_CNT (8UL)
+#define ACTIONS_CNT (7UL)
 extern action_t ACTIONS[ ACTIONS_CNT ];
+
+typedef struct {
+  const char * name;
+    const char * alias;
+} action_alias_t;
+
+#define ACTION_ALIASES_CNT (2UL)
+extern action_alias_t ACTION_ALIASES[ ACTION_ALIASES_CNT ];
 
 int
 main1( int     argc,
@@ -99,6 +112,11 @@ monitor_cmd_fn( args_t *         args,
                 config_t * const config );
 
 void
+keygen_cmd_args( int *    pargc,
+                 char *** pargv,
+                 args_t * args );
+
+void
 keygen_cmd_fn( args_t *         args,
                config_t * const config );
 
@@ -107,7 +125,11 @@ ready_cmd_fn( args_t *         args,
               config_t * const config );
 
 void
-info_cmd_fn( args_t *         args,
+mem_cmd_fn( args_t *         args,
+            config_t * const config );
+
+void
+help_cmd_fn( args_t *         args,
              config_t * const config );
 
 #endif /* HEADER_fd_src_app_fdctl_fdctl_h */
