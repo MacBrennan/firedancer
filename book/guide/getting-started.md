@@ -103,6 +103,8 @@ user = "firedancer"
         "9QxCLckBiJc783jnMvXZubK4wH86Eqqvashtrwvcsgkv",
     ]
 
+    expected_genesis_hash = "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY"
+
 [layout]
     affinity = "0-9"
 
@@ -113,7 +115,9 @@ user = "firedancer"
 This configuration will cause Firedancer to run as the user `firedancer`
 on the local machine. The `identity_path` and `vote_account_path` should
 be Solana Labs style keys, which can be generated with the Solana Labs
-CLI.
+CLI. Currently, Testnet is the only live cluster that Firedancer can be run
+against. The `[consensus.expected_genesis_hash]` needs to be present to
+start it up.
 
 ::: tip NOTE
 
